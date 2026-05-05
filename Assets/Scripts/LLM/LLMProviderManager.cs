@@ -1,20 +1,30 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using UnityEngine;
+using Zenject;
 
-public class LLMProviderManager : MonoBehaviour
+public class LLMProviderManager: IInitializable, IDisposable
 {
-    private Dictionary<string, ILLMService> _activeModels = new();
+    private EventHandler _eventHandler;
+    private Dictionary<string, ILLMService> _activeModels;
 
-    void Awake()
+    [Inject]
+    public void Construct(EventHandler eventHandler)
+    {
+        _eventHandler = eventHandler;
+        _eventHandler.OnRegisterModel += RegisterModel;
+
+        _activeModels = new();
+    }
+
+    public void Initialize()
     {
         // Регистрируем нужные модели
         RegisterModel("OpenAI", new ChatGPTService());
         RegisterModel("Google", new GeminiService());
     }
 
-    public void RegisterModel(string id, ILLMService service) => _activeModels[id] = service;
+    private void RegisterModel(string id, ILLMService service) => _activeModels[id] = service;
 
     public async Task<string> RequestFromModel(string id, string prompt)
     {
@@ -23,6 +33,11 @@ public class LLMProviderManager : MonoBehaviour
             return await service.GetResponseAsync(prompt);
         }
         return null;
+    }
+
+    public void Dispose()
+    {
+        _eventHandler.OnRegisterModel -= RegisterModel;
     }
 }
 
