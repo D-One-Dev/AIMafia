@@ -8,7 +8,8 @@ using System;
 
 public class OpenRouterService : ILLMService
 {
-    public string ModelName => "openrouter/elephant-alpha";
+    // public string ModelName => "nvidia/nemotron-3-super-120b-a12b:free";
+    public string ModelName => "openrouter/owl-alpha";
     private string _apiKey;
     // URL включает название модели и API ключ как параметр
     private string _baseUrl = "https://openrouter.ai/api/v1/chat/completions";
