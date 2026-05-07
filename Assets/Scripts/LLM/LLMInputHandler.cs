@@ -48,7 +48,7 @@ public class LLMInputHandler: IInitializable, IDisposable
             // Debug.Log($"[{_groqSevice.ModelName}] ответил: {response}");
             Debug.Log($"[{_openRouterService.ModelName}] ответил: {response}");
 
-
+            _eventHandler.SayPhrase(response);
             _outputField.text += request + '\n' + response + '\n';
 
             _eventHandler.SaveMessageInDB(_openRouterService.ModelName, "System", response);

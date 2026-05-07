@@ -6,6 +6,7 @@ public class EventHandler: MonoBehaviour
     public event Action<string, string, string> OnSaveMessageInDB;
     public event Action<string, ILLMService> OnRegisterModel;
     public event Action OnSendRequest;
+    public event Action<String> OnSayPhrase;
 
     public void SaveMessageInDB(string author, string target, string message)
     {
@@ -20,5 +21,10 @@ public class EventHandler: MonoBehaviour
     public void SendRequest()
     {
         OnSendRequest?.Invoke();
+    }
+
+    public void SayPhrase(string phrase)
+    {
+        OnSayPhrase?.Invoke(phrase);
     }
 }

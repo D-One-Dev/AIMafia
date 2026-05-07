@@ -1,11 +1,28 @@
 {
   "dependencies": {
+    "com.cysharp.unitask": {
+      "version": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "a9e27c03d411d2fca01cc7410c24c97cd77cb539"
+    },
     "com.gilzoide.sqlite-net": {
       "version": "https://github.com/gilzoide/unity-sqlite-net.git#1.3.2",
       "depth": 0,
       "source": "git",
       "dependencies": {},
       "hash": "08248bd5884d8eb932a837aa56d4ff456daf913f"
+    },
+    "com.ponyudev.sherpa-onnx": {
+      "version": "https://github.com/Ponyu-dev/Unity-Sherpa-ONNX.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.sharp-zip-lib": "1.4.1",
+        "com.cysharp.unitask": "2.5.10"
+      },
+      "hash": "e4d907e7326ca1c8a98ebddf829048af6366dd40"
     },
     "com.unity.burst": {
       "version": "1.8.28",
@@ -176,6 +193,13 @@
         "com.unity.render-pipelines.core": "17.3.0",
         "com.unity.searcher": "4.9.3"
       }
+    },
+    "com.unity.sharp-zip-lib": {
+      "version": "1.4.1",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
     },
     "com.unity.test-framework": {
       "version": "1.6.0",
