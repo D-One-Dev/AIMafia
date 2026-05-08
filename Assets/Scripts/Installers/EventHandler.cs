@@ -7,6 +7,7 @@ public class EventHandler: MonoBehaviour
     public event Action<string, ILLMService> OnRegisterModel;
     public event Action OnSendRequest;
     public event Action<String> OnSayPhrase;
+    public event Action<AudioClip> OnRecognizePhrase;
 
     public void SaveMessageInDB(string author, string target, string message)
     {
@@ -26,5 +27,10 @@ public class EventHandler: MonoBehaviour
     public void SayPhrase(string phrase)
     {
         OnSayPhrase?.Invoke(phrase);
+    }
+
+    public void RecognizePhrase(AudioClip phrase)
+    {
+        OnRecognizePhrase?.Invoke(phrase);
     }
 }

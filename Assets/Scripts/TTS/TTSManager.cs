@@ -1,6 +1,6 @@
+using System;
 using PonyuDev.SherpaOnnx.Tts;
 using Zenject;
-using System;
 
 public class TTSManager: IDisposable
 {
@@ -19,6 +19,7 @@ public class TTSManager: IDisposable
 
     private void SayPhrase(string phrase)
     {
+        _orchestrator.Service.SwitchProfile(UnityEngine.Random.Range(0, 4));
         _orchestrator.GenerateAndPlay(phrase);
     }
 
