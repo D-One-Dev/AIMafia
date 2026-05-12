@@ -22,7 +22,7 @@ public class ScriptsInstaller : MonoInstaller
             .FromNew()
             .AsSingle()
             .NonLazy();
-        Container.BindInterfacesAndSelfTo<TtsOrchestrator>()
+        Container.Bind<TtsOrchestrator>()
             .FromInstance(ttsOrchestrator)
             .AsSingle()
             .NonLazy();
