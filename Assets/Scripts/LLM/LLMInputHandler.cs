@@ -3,34 +3,69 @@ using TMPro;
 using UnityEngine;
 using Zenject;
 
+public enum LLMProvider
+{
+    Groq = 0,
+    OpenRouter = 1
+}
+
 public class LLMInputHandler: IInitializable, IDisposable
 {
     [Inject(Id = "InputField")]
-    private readonly TMP_InputField _inputField;
+    private readonly TMP_Text _inputField;
     [Inject(Id = "OutputField")]
     private readonly TMP_Text _outputField;
 
     private EventHandler _eventHandler;
 
-    private ILLMService _geminiSevice;
-    private ILLMService _groqSevice;
-    private ILLMService _openRouterService;
+    // private ILLMService _geminiSevice;
+    // private ILLMService _groqSevice;
+    // private ILLMService _openRouterService;
     
     [Inject]
     public void Construct(EventHandler eventHandler)
     {
         _eventHandler = eventHandler;
-        _eventHandler.OnSendRequest += SendRequest;
+        // _eventHandler.OnSendRequest += SendRequest;
     }
 
     public void Initialize()
     {
-        _geminiSevice = new GeminiService();
-        _groqSevice = new GroqService();
-        _openRouterService = new OpenRouterService();
+        // _geminiSevice = new GeminiService();
+        // _groqSevice = new GroqService();
+        // _openRouterService = new OpenRouterService();
     }
 
-    private async void SendRequest()
+    // private async void SendRequest()
+    // {
+    //     string request = _inputField.text;
+
+    //     _eventHandler.SaveMessageInDB("Player", "System", request);
+
+    //     _inputField.text = "";
+    //     // string response = await _geminiSevice.GetResponseAsync(request);
+    //     // string response = await _groqSevice.GetResponseAsync(request);
+    //     string response = await _openRouterService.GetResponseAsync(request);
+
+    //     // 4. Выводим результат
+    //     if (!string.IsNullOrEmpty(response))
+    //     {
+    //         // Debug.Log($"[{_geminiSevice.ModelName}] ответил: {response}");
+    //         // Debug.Log($"[{_groqSevice.ModelName}] ответил: {response}");
+    //         Debug.Log($"[{_openRouterService.ModelName}] ответил: {response}");
+
+    //         _eventHandler.SayPhrase(response);
+    //         _outputField.text += request + '\n' + response + '\n';
+
+    //         _eventHandler.SaveMessageInDB(_openRouterService.ModelName, "System", response);
+    //     }
+    //     else
+    //     {
+    //         Debug.LogError("Не удалось получить ответ от нейросети.");
+    //     }
+    // }
+
+    private async void SendRequest(ILLMService llmService)
     {
         string request = _inputField.text;
 
@@ -39,19 +74,19 @@ public class LLMInputHandler: IInitializable, IDisposable
         _inputField.text = "";
         // string response = await _geminiSevice.GetResponseAsync(request);
         // string response = await _groqSevice.GetResponseAsync(request);
-        string response = await _openRouterService.GetResponseAsync(request);
+        string response = await llmService.GetResponseAsync(request);
 
         // 4. Выводим результат
         if (!string.IsNullOrEmpty(response))
         {
             // Debug.Log($"[{_geminiSevice.ModelName}] ответил: {response}");
             // Debug.Log($"[{_groqSevice.ModelName}] ответил: {response}");
-            Debug.Log($"[{_openRouterService.ModelName}] ответил: {response}");
+            Debug.Log($"[{llmService.ModelName}] ответил: {response}");
 
             _eventHandler.SayPhrase(response);
             _outputField.text += request + '\n' + response + '\n';
 
-            _eventHandler.SaveMessageInDB(_openRouterService.ModelName, "System", response);
+            _eventHandler.SaveMessageInDB(llmService.ModelName, "System", response);
         }
         else
         {
@@ -59,8 +94,18 @@ public class LLMInputHandler: IInitializable, IDisposable
         }
     }
 
+    public ILLMService GetLLM(LLMProvider llmProvider)
+    {
+        return llmProvider switch
+        {
+            LLMProvider.Groq => new GroqService(),
+            LLMProvider.OpenRouter => new OpenRouterService(),
+            _ => new OpenRouterService(),
+        };
+    }
+
     public void Dispose()
     {
-        _eventHandler.OnSendRequest -= SendRequest;
+        // _eventHandler.OnSendRequest -= SendRequest;
     }
 }

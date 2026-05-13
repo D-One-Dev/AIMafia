@@ -38,5 +38,9 @@ public class ScriptsInstaller : MonoInstaller
             .FromNew()
             .AsSingle()
             .NonLazy();
+        Container.BindInterfacesAndSelfTo<GameMaster>()
+            .FromNew()
+            .AsSingle()
+            .NonLazy();
     }
 }
