@@ -32,21 +32,14 @@ public class OpenRouterService : ILLMService
         }
     }
 
-    public async Task<string> GetResponseAsync(string prompt)
+    public async Task<string> GetResponseAsync(List<Message> prompt)
     {
         if (string.IsNullOrEmpty(_apiKey)) await LoadApiKey();
 
         // Формируем запрос
         var requestData = new OpenRouterRequest
         {
-            messages = new List<Message>
-            {
-                new Message
-                {
-                    role = "user",
-                    content = prompt
-                }
-            },
+            messages = prompt,
             model = ModelName
         };
 
@@ -64,7 +57,7 @@ public class OpenRouterService : ILLMService
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                Debug.LogWarning(request.downloadHandler.text);
+                // Debug.LogWarning(request.downloadHandler.text);
                 var response = JsonUtility.FromJson<GroqResponse>(request.downloadHandler.text);
                 if (response.choices != null && response.choices.Count > 0)
                 {

@@ -3,17 +3,18 @@ using UnityEngine;
 
 public class EventHandler : MonoBehaviour
 {
-    public event Action<string, string, string> OnSaveMessageInDB;
+    public event Action<string, string, string, bool> OnSaveMessageInDB;
     public event Action<string, ILLMService> OnRegisterModel;
-    public event Action OnSendRequest;
+    public event Action OnSendRequestToLLM;
     public event Action<String> OnSayPhrase;
     public event Action<AudioClip> OnRecognizePhrase;
     public event Action OnStartRecordingPhrase;
     public event Action OnEndRecordingPhrase;
+    public event Action OnSendPhrase;
 
-    public void SaveMessageInDB(string author, string target, string message)
+    public void SaveMessageInDB(string author, string target, string message, bool hidden)
     {
-        OnSaveMessageInDB?.Invoke(author, target, message);
+        OnSaveMessageInDB?.Invoke(author, target, message, hidden);
     }
 
     public void RegisterModel(string id, ILLMService service)
@@ -21,9 +22,9 @@ public class EventHandler : MonoBehaviour
         OnRegisterModel?.Invoke(id, service);
     }
 
-    public void SendRequest()
+    public void SendRequestToLLM()
     {
-        OnSendRequest?.Invoke();
+        OnSendRequestToLLM?.Invoke();
     }
 
     public void SayPhrase(string phrase)
@@ -42,5 +43,10 @@ public class EventHandler : MonoBehaviour
     public void EndRecordingPhrase()
     {
         OnEndRecordingPhrase?.Invoke();
+    }
+
+    public void SendPhrase()
+    {
+        OnSendPhrase?.Invoke();
     }
 }

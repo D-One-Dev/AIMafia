@@ -31,21 +31,14 @@ public class GroqService : ILLMService
         }
     }
 
-    public async Task<string> GetResponseAsync(string prompt)
+    public async Task<string> GetResponseAsync(List<Message> prompt)
     {
         if (string.IsNullOrEmpty(_apiKey)) await LoadApiKey();
 
         // Формируем запрос
         var requestData = new GroqRequest
         {
-            messages = new List<Message>
-            {
-                new Message
-                {
-                    role = "user",
-                    content = prompt
-                }
-            },
+            messages = prompt,
             model = ModelName
         };
 

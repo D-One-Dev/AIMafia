@@ -17,4 +17,4 @@ MonoBehaviour:
   strictValidation: 1
   macPostprocess: 1
   debugLogEditor: 1
-  debugLogRuntime: 1
+  debugLogRuntime: 0

@@ -1,8 +1,10 @@
 using System;
+using System.Threading.Tasks;
 using PonyuDev.SherpaOnnx.Tts;
+using PonyuDev.SherpaOnnx.Tts.Engine;
 using Zenject;
 
-public class TTSManager: IDisposable
+public class TTSManager : IDisposable
 {
     private EventHandler _eventHandler;
     private TtsOrchestrator _orchestrator;
@@ -13,18 +15,18 @@ public class TTSManager: IDisposable
         _orchestrator = orchestrator;
 
         _eventHandler = eventHandler;
-        _eventHandler.OnSayPhrase += SayPhrase;
+        // _eventHandler.OnSayPhrase += SayPhrase;
     }
 
 
-    private void SayPhrase(string phrase)
+    public Task<TtsResult> SayPhrase(string phrase)
     {
         _orchestrator.Service.SwitchProfile(UnityEngine.Random.Range(0, 4));
-        _orchestrator.GenerateAndPlay(phrase);
+        return _orchestrator.GenerateAndPlayAsync(phrase);
     }
 
     public void Dispose()
     {
-        _eventHandler.OnSayPhrase -= SayPhrase;
+        // _eventHandler.OnSayPhrase -= SayPhrase;
     }
 }
