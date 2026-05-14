@@ -27,11 +27,13 @@ public enum PlayerRole
 public class Player
 {
     public string Name;
+    public int ID;
     public PlayerType Type;
     public PlayerRole Role;
     public ILLMService LLMService;
     public string BasePrompt;
     public bool IsDead;
+    public int TTSVoiceID;
 }
 
 public enum GameState
@@ -124,6 +126,9 @@ public class GameMaster : IInitializable, IDisposable
     [Inject(Id = "InputField")]
     private readonly TMP_Text _inputField;
 
+    [Inject(Id = "BotOutputFields")]
+    private readonly TMP_Text[] _botOutputFields;
+
     private List<Player> _players;
 
     private LLMInputHandler _llmInputHandler;
@@ -133,6 +138,7 @@ public class GameMaster : IInitializable, IDisposable
     private TTSManager _ttsManager;
     private DatabaseManager _databaseManager;
     private bool _canPlayerSubmit;
+    private bool _canPlayerVote;
 
     [Inject]
     public void Construct(LLMInputHandler llmInputHandler, EventHandler eventHandler, TTSManager ttsManager, DatabaseManager databaseManager)
@@ -143,6 +149,7 @@ public class GameMaster : IInitializable, IDisposable
 
         _eventHandler = eventHandler;
         _eventHandler.OnSendPhrase += SendPhrase;
+        _eventHandler.OnPlayerVote += PlayerVote;
     }
 
     public async void Initialize()
@@ -162,6 +169,7 @@ public class GameMaster : IInitializable, IDisposable
             new Player
             {
                 Name = "Михаил",
+                ID = 0,
                 Type = PlayerType.Human,
                 Role = PlayerRole.Мирный,
                 LLMService = null,
@@ -170,34 +178,42 @@ public class GameMaster : IInitializable, IDisposable
             new Player
             {
                 Name = "Кристина",
+                ID = 1,
                 Type = PlayerType.AI,
                 Role = PlayerRole.NotSet,
                 LLMService = _llmInputHandler.GetLLM(LLMProvider.OpenRouter),
-                IsDead = false
+                IsDead = false,
+                TTSVoiceID = 2,
             },
             new Player
             {
                 Name = "Дмитрий",
+                ID = 2,
                 Type = PlayerType.AI,
                 Role = PlayerRole.NotSet,
                 LLMService = _llmInputHandler.GetLLM(LLMProvider.Groq),
-                IsDead = false
+                IsDead = false,
+                TTSVoiceID = 0,
             },
             new Player
             {
                 Name = "Егор",
+                ID = 3,
                 Type = PlayerType.AI,
                 Role = PlayerRole.NotSet,
                 LLMService = _llmInputHandler.GetLLM(LLMProvider.OpenRouter),
-                IsDead = false
+                IsDead = false,
+                TTSVoiceID = 1,
             },
             new Player
             {
                 Name = "Агамир",
+                ID = 4,
                 Type = PlayerType.AI,
                 Role = PlayerRole.NotSet,
                 LLMService = _llmInputHandler.GetLLM(LLMProvider.Groq),
-                IsDead = false
+                IsDead = false,
+                TTSVoiceID = 3,
             }
         };
     }
@@ -253,7 +269,8 @@ public class GameMaster : IInitializable, IDisposable
         await PerformNightActions();
         _currentState = GameState.Discussion;
         _databaseManager.SaveMessageInDB("System", "System", "Начинается фаза обсуждения", false);
-        _canPlayerSubmit = true;
+        if (_players.Count(p => !p.IsDead && p.Type == PlayerType.Human) > 0) _canPlayerSubmit = true;
+        else await PerformDiscussion();
     }
 
     private async Task PerformNightActions()
@@ -301,6 +318,7 @@ public class GameMaster : IInitializable, IDisposable
             string phrase = _inputField.text;
             _inputField.text = "";
             _databaseManager.SaveMessageInDB("Михаил", "System", phrase, false);
+            _canPlayerSubmit = false;
         }
 
         TryNext();
@@ -334,7 +352,7 @@ public class GameMaster : IInitializable, IDisposable
             // Ждём ответ текущего AI
             string response = await currentRequestTask;
 
-            response = Regex.Replace(response, @"^[^:]+:\s*", "");
+            response = RemoveLeadingName(response);
 
             // Пока идёт озвучка —
             // запускаем следующий запрос
@@ -349,7 +367,7 @@ public class GameMaster : IInitializable, IDisposable
             await currentSpeechTask;
 
             // Запускаем новую озвучку
-            currentSpeechTask = SpeakResponse(response);
+            currentSpeechTask = SpeakResponse(response, aliveAIs[i]);
 
             // Переходим к следующему запросу
             currentRequestTask = nextRequestTask;
@@ -357,6 +375,113 @@ public class GameMaster : IInitializable, IDisposable
 
         // Дожидаемся последней озвучки
         await currentSpeechTask;
+
+        _databaseManager.SaveMessageInDB("System", "System", "Начинается фаза голосования", false);
+        ShowLog("Начинается фаза голосования");
+        _currentState = GameState.Vote;
+        if (_players.Count(p => !p.IsDead && p.Type == PlayerType.Human) <= 0) await PerformVote("");
+        else _canPlayerVote = true;
+    }
+
+    private async void PlayerVote(string vote)
+    {
+        if (!_canPlayerVote) return;
+        if (_players.Count(p => !p.IsDead && p.Type == PlayerType.Human) <= 0) return;
+        if (_players.First(p => p.Name == vote).IsDead) return;
+
+        _canPlayerVote = false;
+        await PerformVote(vote);
+    }
+
+    private async Task PerformVote(string playerVote)
+    {
+        List<Player> aliveAIs = _players
+            .Where(p => !p.IsDead && p.Type == PlayerType.AI)
+            .ToList();
+
+        Dictionary<string, int> votes = new Dictionary<string, int>
+        {
+            { "Михаил", 0 },
+            { "Кристина", 0 },
+            { "Дмитрий", 0 },
+            { "Егор", 0 },
+            { "Агамир", 0 }
+        };
+
+        if (votes.ContainsKey(playerVote) && !_players.First(p => p.Name == playerVote).IsDead) votes[playerVote] += 1;
+
+        foreach (Player player in aliveAIs)
+        {
+            if (player.Type == PlayerType.Human) continue;
+            string answer = await _llmInputHandler.SendRequest(player.LLMService, player.Name, "Голосование", player.BasePrompt, true);
+
+            if (votes.ContainsKey(answer) && !_players.First(p => p.Name == answer).IsDead) votes[answer] += 1;
+        }
+
+        KeyValuePair<string, int> mostVotedPlayer = votes.OrderByDescending(v => v.Value).First();
+        Player killedPlayer = _players.First(p => p.Name == mostVotedPlayer.Key);
+        killedPlayer.IsDead = true;
+
+        string log = "Голосование:\n";
+        foreach (KeyValuePair<string, int> pair in votes)
+        {
+            log += $"{pair.Key}: {pair.Value}\n";
+        }
+        string logEnd = "";
+        switch (killedPlayer.Role)
+        {
+            case PlayerRole.Мафия:
+                logEnd = $"{mostVotedPlayer.Key} выбывает, его роль - Мафия";
+                break;
+            case PlayerRole.Шериф:
+                logEnd = $"{mostVotedPlayer.Key} выбывает, его роль - Шериф";
+                break;
+            case PlayerRole.Доктор:
+                logEnd = $"{mostVotedPlayer.Key} выбывает, его роль - Доктор";
+                break;
+            case PlayerRole.Мирный:
+                logEnd = $"{mostVotedPlayer.Key} выбывает, его роль - Мирный житель";
+                break;
+        }
+        log += logEnd;
+
+        _databaseManager.SaveMessageInDB("System", "System", logEnd, false);
+        ShowLog(log);
+    }
+
+    public string RemoveLeadingName(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return input;
+
+        int colonIndex = input.IndexOf(':');
+
+        // Двоеточия нет или оно в начале строки
+        if (colonIndex <= 0)
+            return input;
+
+        // Слишком длинная "шапка" — скорее всего не имя
+        if (colonIndex > 10)
+            return input;
+
+        string beforeColon = input[..colonIndex].Trim();
+
+        // Пусто после Trim
+        if (beforeColon.Length == 0)
+            return input;
+
+        // Если до двоеточия есть знаки препинания — не удаляем
+        // Разрешаем дефис и пробелы, т.к. имена могут быть двойными
+        bool hasInvalidPunctuation = beforeColon.Any(c =>
+            char.IsPunctuation(c) &&
+            c != '-' &&
+            c != '—');
+
+        if (hasInvalidPunctuation)
+            return input;
+
+        // Удаляем имя и пробелы после двоеточия
+        return input[(colonIndex + 1)..].TrimStart();
     }
 
     private Task<string> SendPlayerRequest(Player player)
@@ -370,10 +495,10 @@ public class GameMaster : IInitializable, IDisposable
         );
     }
 
-    private async Task SpeakResponse(string response)
+    private async Task SpeakResponse(string response, Player player)
     {
-        TtsResult result = await _ttsManager.SayPhrase(response);
-
+        TtsResult result = await _ttsManager.SayPhrase(response, player.TTSVoiceID);
+        _botOutputFields[player.ID].text = response;
         await Task.Delay(TimeSpan.FromSeconds(result.DurationSeconds));
     }
 

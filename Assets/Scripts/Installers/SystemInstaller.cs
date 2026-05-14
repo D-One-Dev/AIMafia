@@ -6,6 +6,7 @@ public class SystemInstaller : MonoInstaller
 {
     [SerializeField] private TMP_Text inputField;
     [SerializeField] private TMP_Text outputField;
+    [SerializeField] private TMP_Text[] botOutputFields;
     public override void InstallBindings()
     {
         Container.Bind<TMP_Text>()
@@ -15,6 +16,10 @@ public class SystemInstaller : MonoInstaller
         Container.Bind<TMP_Text>()
             .WithId("OutputField")
             .FromInstance(outputField)
+            .AsCached();
+        Container.Bind<TMP_Text[]>()
+            .WithId("BotOutputFields")
+            .FromInstance(botOutputFields)
             .AsCached();
     }
 }

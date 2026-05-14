@@ -11,6 +11,7 @@ public class EventHandler : MonoBehaviour
     public event Action OnStartRecordingPhrase;
     public event Action OnEndRecordingPhrase;
     public event Action OnSendPhrase;
+    public event Action<string> OnPlayerVote;
 
     public void SaveMessageInDB(string author, string target, string message, bool hidden)
     {
@@ -48,5 +49,10 @@ public class EventHandler : MonoBehaviour
     public void SendPhrase()
     {
         OnSendPhrase?.Invoke();
+    }
+
+    public void PlayerVote(string vote)
+    {
+        OnPlayerVote?.Invoke(vote);
     }
 }

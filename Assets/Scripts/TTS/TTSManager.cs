@@ -19,9 +19,9 @@ public class TTSManager : IDisposable
     }
 
 
-    public Task<TtsResult> SayPhrase(string phrase)
+    public Task<TtsResult> SayPhrase(string phrase, int voiceID)
     {
-        _orchestrator.Service.SwitchProfile(UnityEngine.Random.Range(0, 4));
+        _orchestrator.Service.SwitchProfile(voiceID);
         return _orchestrator.GenerateAndPlayAsync(phrase);
     }
 
